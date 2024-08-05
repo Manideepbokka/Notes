@@ -1,0 +1,94 @@
+Learning on 14/03:
+-----------------
+1.)
+SELECT EMP.name AS Employee FROM Employee EMP,Employee MGR
+WHERE EMP.managerId=MGR.id AND EMP.salary>MGR.salary;
+
+clause: we can self join the table using where condition with same table name in commaseparated diff aliases
+and we can still do self join using inner, left, right, outer.
+
+2.)
+We can join tables with using() function when the column name is same in both tables.
+
+Ex: select e.name, b.bonus from Employee e left join Bonus b using(empId) where bonus<1000 or bonus is null.
+
+Imp Clause: we cannot use aliased column names in where clause when we join tables with using(), we can use direct names.
+
+3.) DENSE_RANK() OVER(PARTITION BY COLUMN1 ORDER BY COLUMN2) - GIVES THE RANK BASED ON PARTITIONED COLUMN ALMOST EQUAL TO GROUP BY.
+
+suppose we have:
+ID NAME    DOMAIN SALARY
+1 manideep JAVA 100K
+2 Nikhil  Java  130K
+3 Victor  DataEngineer 150K 
+
+select  DENSE_RANK() OVER(PARTITION BY DOMAIN ORDER BY SALARY DESC) AS RANK FROM EMPLOYEE
+Then it will rank in this way below
+ID NAME    DOMAIN   SALARY  RANK
+1 manideep JAVA     100K      2
+2 Nikhil  Java      130K      2
+3 Victor  DataEngineer 150K   1
+
+we also have RANK() method which will give rank by skipping numbers and it will go to nect number but its not same with dense_rank
+                   Dense_rank ASC       Rank ASC
+100K java          1                    1
+100K java          1 			1
+120K React         2			3
+130K react         3			4
+140K DataEngineer  4			5
+
+clause: Its necessary to use diff column names in partition and order by otherwise it will not work.
+
+5.) In operator can be used on multiple columns at time
+
+select * from Employee e
+where (e.salary, e.Department) in (select e.salary, e.Department from Employee e group by e.salary, e.Department having max(e.salary) >110K);
+
+Clause: Just the data type should match in respective orders.
+
+6.) LAG() 
+
+with temptable as(
+select temperature, id, LAG(temperature,1,99999) over (order by recordDate ASC) AS prevtemp
+ from Weather )
+ select id from temptable where
+ temperature> prevtemp;
+
+Input: 
+Weather table:
++----+------------+-------------+
+| id | recordDate | temperature |
++----+------------+-------------+
+| 1  | 2015-01-01 | 10          |
+| 2  | 2015-01-02 | 25          |
+| 3  | 2015-01-03 | 20          |
+| 4  | 2015-01-04 | 30          |
++----+------------+-------------+
+Output: 
++----+
+| id |
++----+
+| 2  |
+| 4  |
++----+
+Explanation: 
+In 2015-01-02, the temperature was higher than the previous day (10 -> 25).
+In 2015-01-04, the temperature was higher than the previous day (20 -> 30).
+
+
+7.)
+
+# Write your MySQL query statement below
+SELECT distinct 
+    i1.num as ConsecutiveNums 
+FROM 
+    logs i1,
+    logs i2,
+    logs i3
+WHERE 
+    i1.id=i2.id+1 AND 
+    i2.id=i3.id+1 AND 
+    i1.num=i2.num AND 
+    i2.num=i3.num
+
+

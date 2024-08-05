@@ -1,0 +1,1856 @@
+ORDER BY CLAUSE:
+
+The order by clause changes the returning rows order by any column or alias or the numeric positions of the columns in select list.
+
+The Order By Clause can sort the retrieved rows in ascending(ASC) or descending(DESC) order. default is ASC
+
+select first_name,last_name,salary from employees order by last_name;
+
+
+select first_name,last_name,(10*(salary/5)+3000) - 100 as new_salary from employees order by new_salary;
+
+
+select first_name,last_name,(10*(salary/5)+3000) - 100 as new_salary from employees order by 2;
+
+The Order by can be used with multiple columns.
+select * from employees order by first_name,last_name;
+
+The order by doesnt change the actual order of the rows in the table.
+
+
+
+
+
+ASC and DESC Operators:
+
+Queries can be ordered by columns in ascending or descending order individually.
+
+Aliases and numeric positions can be used with the ASC and DESC operators.
+
+Null values are present at last in ASC.
+
+
+select employee_id,first_name,last_name,salary from employees order by first_name desc,salary desc;
+select employee_id,first_name,last_name,salary s from employees order by first_name desc,s desc;
+
+select employee_id,first_name,last_name,salary from employees order by 2 desc,4 desc;
+select first_name,commission_pct from employees order by commission_pct;
+
+
+
+
+NULLS FIRST and NULLS LAST Operators:
+
+These operators are used for changing the order of null values.
+
+select first_name,commission_pct from employees order by commission_pct ASC NULLS  FIRST;
+select first_name,commission_pct from employees order by commission_pct DESC NULLS LAST;
+
+
+ROWID & ROWNUM:
+
+
+->The ROWID is a unique identifier that contains the physical address of a row.
+->Oracle automatically generates a unique ROWID at the time of insertion of a row.
+->The Fastest way to access a single row is using its ROWID
+->The ROWID is permanent and doesnt change.
+
+
+
+The ROWNUM is nothing but consecutive logical sequence number given to the rows fetched from the table.
+
+To limit the returning rows in a table,you can use the ROWNUM pseudo column.
+
+The ROWNUM is temporary.
+
+If you change the query, the rownum number will refer to another row.
+
+select employee_id,first_name,last_name,salary,ROWID,ROWNUM from employees;
+
+select employee_id,first_name,last_name,salary,ROWID,ROWNUM from employees where department_id=60;
+
+select employee_id,first_name,last_name,salary,ROWID,ROWNUM from employees 
+where department_id=60 
+AND rownum<=5
+order by salary DESC;
+
+
+select employee_id,first_name,last_name,salary,ROWID,ROWNUM from
+(select employee_id,first_name,last_name,salary,ROWID from employees 
+where department_id=60 
+order by salary DESC)
+where rownum<=5;
+
+
+
+FETCH:
+
+
+select first_name,last_name,salary from employees 
+order by salary desc
+offset 1 row
+fetch first 10 rows only;
+
+select first_name,last_name,salary from employees 
+order by salary desc
+offset 1 row
+fetch first 10 rows with ties;
+
+select first_name,last_name,salary from employees 
+order by salary desc
+offset 1 row
+fetch next 10 rows with ties;
+
+
+-->when we are using "with ties" we should definitely use order by.
+
+-->[OFFSET rows_to_skip ROW[s]] FETCH [FIRST|NEXT] [row_count |
+percent PERCENT] ROW[S] [ONLY | WITH TIES];
+
+--> we can use ROW or ROWS there will be no diff.
+
+
+
+
+Using Substitution Variables:
+
+
+-->A Substitution variable can be thought of as a User Variable.
+
+-->The substitution variables are placeholders in SQL script where you want to substitute some values at runtime.
+
+-->The (&) character is used before the substitution variable in query.
+
+-->If we want to use a substitution variable for string or a date,
+we need to make sure that the value is enclosed in single quotes.
+
+-->We can use more than one substitution variable at various places in a sql statement:
+
+1.)WHERE Condition
+2.)ORDER BY Clause
+3.)Column Expression
+4.)Table Names
+5.)Entire SELECT Statements
+
+select employee_id,first_name,last_name,department_id from employees where 
+department_id=&department_no;
+
+select employee_id,first_name,last_name,department_id from employees where 
+first_name='&name';
+
+select employee_id,first_name,last_name,&column_name
+from &table_name
+where &condition
+order by &order_by_clause;
+
+
+-->Using a double ampersand in front of a substitution variable tells  sql developer to define variable for the duration of session.
+
+select employee_id,first_name,last_name,salary 
+from employees
+where salary between &&sal and &sal+1000;
+
+
+select employee_id,first_name,last_name,&&column_name
+from employees
+order by &column_name;
+
+select &&column_name
+from employees
+group by &column_name
+order by &column_name;
+
+-->The DEFINE and UNDEFINE commands allow us to explicitly create and delete user variables.
+
+DEFINE command is used to define a new user variable and assign it a value.
+
+It can also be used to display the value of a specific user variable or to display the value of variables.
+
+DEFINE variable_name=value;
+
+
+
+
+DEFINE emp_num=100;
+DEFINE column_name='first_name';
+
+select * from employees where employee_id=&emp_num;
+
+DEFINE;
+
+DEFINE column_name;
+UNDEFINE column_name;
+
+
+
+ACCEPT/PROMPT:
+
+-->The most reliable and robust method for getting input from user is to explicitly prompt for values using the ACCEPT and PROMPT commands.
+
+ACCEPT emp_id PROMPT 'Please Enter an Employee ID:';
+
+-->The accept command takes input from the user and setores it in a user variable.
+
+-->The prompt command is used to display a message to the user for supplying a brief explanation of what your script is going to accomplish.
+
+
+ACCEPT min_salary prompt 'Please specify the MINIMUM salary';
+ACCEPT max_salary prompt 'Please specify the MAXIMUM salary';
+
+select employee_id,last_name,salary
+from employees
+where salary between &min_salary and &max_salary;
+
+
+
+ACCEPT emp_id PROMPT 'Please enter a valid Employee ID:';
+select employee_id,first_name,last_name,salary 
+from employees
+where employee_id=&emp_id;
+
+undefine emp_id;
+
+
+
+SET VERIFY ON/OFF:
+
+-->The VERIFY command displays the status of the variable before and after the substitution.
+
+
+1.)SET VERIFY ON; Turns on verification.
+
+2.)SET VERIFY OFF; Turns off verification.
+
+
+SET VERIFY ON;
+select employee_id,first_name,last_name 
+from employees where employee_id= &emp_id;
+
+set verify off;
+set define off;
+select * from departments where department_name='R&D';
+set define on;
+
+
+
+Single Row Functions:
+
+
+
+What is a Function?
+
+-->Functions are created for manipulating the data and returning value.
+-->Functions must be created before calling them.Otherwise will throw error.
+-->Functions are formerly created codes that reside in the database.
+They can be called easily by typing only their names and parameters.
+-->A function is a bunch of code created for reuse.
+
+                     Functions
+				|
+			1.)Single row functions 1 input,1 output
+			2.)Multiple row functions more inputs,1 output
+
+
+-->Single row functions operate on single rows and return 
+only one result per row.
+-->Accept one or more arguments and return one value.
+-->Return value for each row returned.
+-->Can be used alone or nested.
+-->A Column or an expression can be used as arguments.
+-->The returning data type can be different than the input data types.
+-->Can be used in SELECT,WHERE or ORDER BY clauses.
+
+select function_name[(arg1,arg2,..)] FROM dual;
+
+
+5 types of single row functions:
+
+1.)Character functions: input:character values  output:Character or numeric values.
+2.)Numeric Functions: input:numeric output:numeric
+3.)General : These functions take take in any datatype.
+But they mainly used to handle NULL values.
+4.)date : operates on values of the DATE datatype
+5.)Conversion : used to convert one data type to another.
+
+
+Character Functions:
+1.)case conversion functions:
+	UPPER : converts all the input characters to lowercase chars.
+	LOWER : converts all the input characters to uppercase chars.
+	INITCAP : converts first letter of each word to uppercase
+			and rest of them to lowercase.
+2.)Character manipulation functions:
+	SUBSTR- SUBSTR('Sql Course',1,3)   res: Sql
+	LENGTH- LENGTH('Sql Course')       res:10
+	CONCAT- CONCAT('Sql','Course')     res:SqlCourse
+	INSTR - INSTR('Sql Course','o')    res:6
+	TRIM
+	REPLACE
+	LPAD | RPAD
+
+
+select first_name,UPPER(first_name),last_name,LOWER(last_name),email,INITCAP(email) from employees;
+
+select * from employees where last_name=INITCAP('KING');
+
+select * from employees where LOWER(last_name)='king';
+
+select * from employees where UPPER(last_name)='KING';
+
+
+select first_name,SUBSTR(first_name,3,6),SUBSTR(first_name,3),
+                last_name, length(last_name) from employees;
+
+select first_name,last_name,concat(first_name,last_name) from employees;
+
+select concat(concat(first_name,last_name),employee_id) from employees;
+
+select instr('I am learning how to use functions in Oracle','o',1,3) from dual;
+
+select instr('I am learning how to use functions in Oracle','o',-1,1) from dual;
+
+select first_name,instr(first_name,'a') from employees;
+
+
+
+select trim(LEADING ' ' from '   My Name is Adam   ') trimmed_text from dual;
+select trim(TRAILING ' ' from '   My Name is Adam   ') trimmed_text from dual;
+select trim(BOTH ' ' from '   My Name is Adam   ') trimmed_text from dual;
+
+select trim(LEADING 'm' from 'my Name is Adam') trimmed_text from dual;
+select trim(TRAILING 'm' from 'my Name is Adammmm') trimmed_text from dual;
+
+
+select rtrim('   My Name is Adam   ') rtrimmed_text from dual;
+select ltrim('   My Name is Adam   ') ltrimmed_text from dual;
+
+select rtrim('my Name is Adammmm','my') r-trimmed_text FROM dual;
+select ltrim('www.yourwebsitename.com','w.') l-trimmed_text FROM dual;
+
+
+
+select first_name,replace(first_name,'a','-') replaced_output From employees;
+select first_name,replace(first_name,'und','-') replaced_output From employees;
+
+select first_name,lpad(first_name,10,'*') pad from employees;
+select first_name,rpad(first_name,10,'*') pad from employees;
+
+
+
+Numeric Functions:
+
+1.)ROUND : Takes in a number and rounds it to specified no.of decimal places.
+
+2.)TRUNC : Truncates Values to the specified number of decimal places.
+
+3.)CEIL  : Returns the smallest integer number greater than or equal to a specified number.
+
+4.)FLOOR : Returns the highest integer number less than or equal to
+a specified number.
+
+5.)MOD   : Returns the remainder of division.
+
+select round(12.136,2) from dual;
+
+select trunc(12.136,2) from dual;
+
+select ceil(12.536) from dual;
+
+select floor(12.536) from dual;
+
+select mod(8,5) from dual;
+
+
+
+https://docs.oracle.com/cd/E49933_01/server.770/es_eql/src/ceql_functions_numeric.html
+
+
+
+Nested Functions:
+
+Functions can be nested within each other
+
+-->Nested functions are evaluated starting from innermost function and execute one by one toward the outermost one.
+
+-->The result of the innermost function becomes the input of the outer function.
+
+select first_name,last_name,lpad(upper(concat(first_name,last_name)),20,'*')
+as "Nested Functions" from employees;
+
+select 'John Smith' output from dual;
+
+select substr('John Smith',instr('John Smith',' ')+1,length('John Smith')) output
+from dual;
+select substr('John Smith',instr('John Smith',' ')+1) output
+from dual;
+
+select concat(concat(first_name,' '),last_name), substr(first_name || ' ' || last_name,instr(first_name || ' ' || last_name,' ')+1)  output
+from employees;
+
+
+
+Date Values & Formats in Oracle:
+
+-->DATE is the main datatype used in Oracle for storing the date values.
+
+-->Oracle Database stores the date values in an internal numeric format.
+
+--> It stores a seven-byte number that contains the century,year,
+month,day,and hour,minute and second.
+
+There are many diff date representations in Oracle like
+('DD-MON-RR','DD-MM-YY','DD/MM/YYYY' etc)
+
+
+
+Date Datatypes in oracle:
+
+-->DATE: The standard data type that stores data values in oracle.
+
+-->TIMESTAMP: This data type stores year,month,day,hour,minute,second
+as well as fractional seconds.
+
+-->TIMESTAMP WITH TIMEZONE: This data type is the same as TIMESTAMP,
+but it stores the timezone along with it.
+
+
+1.)SYSDATE:returns the current date and time of the OS where the oracle 
+database is installed.
+2.)CURRENT_DATE: returns the current date and time of the place where 
+the users session is logged in from.
+3.)SESSIONTIMEZONE: returns time zone of the users session.
+4.)SYSTIMESTAMP: returns the date and time of the database.
+5.)CURRENT_TIMESTAMP:returns current date and time from users session.
+
+select CURRENT_DATE,SESSIONTIMEZONE,SYSTIMESTAMP,CURRENT_TIMESTAMP FROM DUAL;
+select sysdate,current_date,sessiontimezone from dual;
+select systimestamp,current_timestamp from dual;
+
+
+
+Arithmetic Operations on dates:
+
+
+tools->preferences->Database->NLP->Date Format DD-MM-RR HH24:MI:SS
+
+
+-->We Can add or subtract a number from a date, and result of this operation will also be a date.
+
+select sysdate,sysdate-4 from dual;
+
+select sysdate,sysdate + 1/24 from dual;
+
+select sysdate,sysdate + 1/(24*60) from dual;
+
+
+-->Subtracting two dates returns the no.of dates b/w these dates.
+
+
+select employee_id,hire_date,sysdate,trunc((sysdate-hire_date))  worked_In_Days from employees order by worked_In_Days;
+
+
+select employee_id,hire_date,sysdate,trunc((sysdate-hire_date)/365) worked_In_Years from employees order by worked_In_Years;
+
+
+
+Date Manipulation Functions:
+
+-->Date Functions operate on dates and return dates,numbers or texts.
+
+1.)ADD_MONTHS(date,n)- Adds months to a date.
+2.)MONTHS_BETWEEN(date1,date2) - No.of months b/w 2 dates.
+3.)ROUND(date,format) - Rounds a date/time value to specified element.
+4.)TRUNC(date,format)- Truncates a date/time value to a specified element.
+5.)EXTRACT(date_component from date)- Extracts a specific time component from date.
+6.)NEXT_DAY(date,day_of_week)- Returns the date of the next specified weekday.
+7.)LAST_DAY(date)- Returns the last day of the month.
+
+select sysdate,add_months(sysdate,2) from dual;
+select sysdate,add_months(sysdate,-2) from dual;
+select sysdate,add_months(sysdate,24) from dual;
+
+
+select months_between(sysdate,'30-05-2001') from dual;
+
+select round('16-09-2022','MONTH') from dual;
+
+select employee_id,hire_date,trunc(hire_date,'MONTH') trunc_res,
+round(hire_date,'MONTH') rounded_res from employees;
+
+select employee_id,hire_date,trunc(hire_date,'YEAR') trunc_res,
+round(hire_date,'YEAR') rounded_res from employees;
+
+select extract(day from sysdate) extracted_result from dual;
+select extract(month from sysdate) extracted_result from dual;
+select extract(year from sysdate) extracted_result from dual;
+
+
+select next_day('30-05-22','MONDAY') from dual;
+
+
+
+Oracle Conversion Functions:
+
+1.)Implicit data type conversions:Oracle server automatically converts some
+data type to required one.
+2.)Explicit data type conversions:Explicit conversions are done using the conversion functions explicitly.
+
+-->A VARCHAR2 or CHAR value is converted to a NUMBER or a DATE by the Oracle server automatically.
+-->A NUMBER or a DATE value is automatically converted to character data(VARCHAR2) by the Oracle server.
+-->The implicit conversions are performed only if the characters match with a valid number or date.
+
+select * from employees where salary>'5000';
+
+select * from employees where hire_date = '17-JUN-03';
+
+select department_id || department_name from departments;
+
+select first_name || sysdate from employees;
+
+Explicit Data Type Conversions:
+
+-->Used for conveerting data type of value to another data type expllicitly.
+
+-->There are 3 functions for explicit data type conversions which are:
+1.)TO_CHAR()
+2.)TO_NUMBER()
+3.)TO_DATE()
+
+TO_CHAR-->Converts the NUMBER or DATE to the VARCHAR2 data type in the specified format model.
+
+TO_CHAR(date | number,[format_model],[nls_parameter])
+
+->The TO_CHAR function is case-sensitive.
+
+select first_name,last_name,TO_CHAR(hire_date,'YYYY') from
+employees where TO_CHAR(employee_id)='100';
+
+select first_name,last_name,TO_CHAR(hire_date,'YYYY') from
+employees;
+
+select first_name,last_name,hire_date,TO_CHAR(hire_date,'YY') from
+employees;
+
+select first_name,last_name,hire_date,TO_CHAR(hire_date,'RR') from
+employees;
+
+select first_name,last_name,hire_date,TO_CHAR(hire_date,'MON') from
+employees;
+
+select first_name,last_name,hire_date,TO_CHAR(hire_date,'YEAR') from
+employees;
+
+select first_name,hire_date,TO_CHAR(hire_date,'Dy-Month-yyyy') "Formatted Date"
+from employees;
+
+select first_name,hire_date,TO_CHAR(hire_date,'Dy-Month-yyyy HH24:MI') "Formatted Date"
+from employees;
+
+
+
+
+NUMBER FORMAT MODELS:
+
+9-specifies the no.of digits.
+0-specifies leading or trailing zeros.
+$-Adds dollar sign
+L-Displays local currency symbol
+.-Displays a decimal point
+,-Displays comma as indicator.
+
+
+--> The TO_NUMBER function is used to convert a text to a number.
+
+TO_NUMBER(char [,'format_model'])
+
+
+
+select TO_CHAR(salary,'$99,999.99'),salary from employees;
+select TO_CHAR(salary,'L99,999.99'),salary from employees;
+
+select salary,salary*commission_pct*10 original,
+to_char(salary*commission_pct*10,'$999,999.00') fomatted
+from employees
+where commission_pct is not null;
+
+select TO_NUMBER('$6,152.21','$99,999.99') 
+formatted_number from dual;
+
+
+select first_name,last_name,TO_CHAR(hire_date,'DDSPTH Month YYYY')
+"Hire Date" from employees where hire_date>to_date('Jun 12,2005','Mon DD,YYYY');
+
+
+NVL Function:
+
+
+NVL,NVL2,NULLIF,COALESCE
+
+NVL: Allows us to replace a null value with meaningful alternative.
+
+	NVL(Expression1,Expression2)
+
+IF expression1 is null, then NVL() function returns expression2
+
+Data types can be characters,numbers or dates.
+
+Data types must match with each other (number-number,date-date,
+character-character)
+
+The NVL function is extremely useful in arthimetic operations to avoid 
+calculation errors.
+
+select job_id,first_name,last_name,commission_pct,
+NVL(commission_pct,0) NVL_COMM_PCT from employees
+where job_id in('SA_REP','IT_PROG');
+
+
+
+NVL2: Allows us to replace a value when a null value is
+encountered as well as non-null value is encountered.
+	NVL2(Expression1,Expression2,Expression3)
+
+-->If Expression1 is not null then,returns Expression2
+If Expression1 is null,then, the Expression3 is returned.
+
+
+-->And the Expression1 does not have to be same data type in Expression2
+and Expression3.But,the Expression2 and Expression3 must
+be in the same data type.
+
+Data types can be characters,numbers or dates.
+
+
+select job_id,first_name,last_name,commission_pct,
+nvl2(commission_pct,'has','has not') "NVL2 Example"
+from employees where job_id in ('SA_REP','IT_PROG')
+order by commission_pct NULLS LAST;
+
+
+
+NULLIF:
+
+	NULLIF(Expression1,Expression2)
+-->Compares Expression1,Expression2.If they are equal, returns NULL.
+But,if they are not equal,returns Expression1.
+
+-->The Expression1 and Expression2 must be in same data type.
+
+select first_name,last_name, Length(first_name) len1,
+Length(last_name) len2,
+NULLIF(Length(first_name),length(last_name)) "result"
+from employees;
+
+
+COALESCE:
+
+-->The COALESCE function accepts a list of arguments and returns the 
+first one that evaluates to a non-null value.
+
+	COALESCE(Expression1,Expression2,..., ExpressionN)
+
+-->It accepts at least two or more parameters.
+
+-->If all the specified expressions are NULL, then the function
+returns NULL.
+
+-->All of the expressions must be in same data type.
+
+select coalesce(null,null,1,2) from dual;
+select state_province,city,coalesce(state_province,city) from locations;
+
+
+
+
+
+Conditional Expressions:
+
+
+CASE ... WHEN Expression
+
+-->Performs an IF-THEN-ELSE check an SQL statement.
+
+CASE expression WHEN comparison_expression_1 THEN result_1
+			[WHEN comparison_expression_2 THEN result_2
+			...
+			WHEN comparison_expression_n THEN result_n
+			ELSE result]
+END
+
+-->Expression and comparison_expressions must be in same data type.
+
+-->There are two ways of using the CASE expressions which are Simple Case 
+Expression and Searched Case Expression.
+
+
+-->The expression is stated at the beginning, and the possible results
+are checked in condition parameters.
+
+CASE first_name
+		WHEN 'Alex' THEN 'Name is Alex'
+		WHEN 'John' THEN 'Name is John'
+	ELSE 'Another'
+END
+
+
+CASE
+	WHEN first_name='Alex' THEN 'Name is Alex'
+	WHEN first_name='John' THEN 'Name is John'
+   ELSE 'Another'
+END
+
+
+select first_name,last_name,job_id,salary,
+hire_date, CASE job_id when 'ST_MAN' then 1.20*salary
+                       when 'SH_MAN' then 1.30*salary
+                       when 'SA_MAN' then 1.40*salary
+                       ELSE salary 
+                       END "Updated_Salary"
+from employees where job_id
+IN ('ST_MAN','SH_MAN','SA_MAN');
+
+
+-->We Can use case statement in where clause also.
+
+select first_name,last_name,job_id,salary
+from employees
+where
+(CASE
+    when job_id='IT_PROG' and salary>5000 then 1
+    when job_id='SA_MAN' and salary>10000 then 1
+    Else 0
+    END)=1;
+
+
+
+
+DECODE:
+
+-->It is used to provide an if-then-else logic in sql.
+-->The CASE is an expression whereas DECODE is a function.
+
+DECODE (col|expression,search1,result1 [,search2,result2]...[,default])
+-->All the search expressions must be in same data type.
+
+
+-->But the search and result expressions dont have to be in same data type.
+
+
+select first_name,last_name,job_id,salary,hire_date,
+decode(job_id,'ST_MAN',salary*1.20,
+             'SH_MAN',salary*1.30,
+             'SA_MAN',salary*1.40) updated_salary
+from employees where job_id IN ('ST_MAN','SH_MAN','SA_MAN');
+
+
+select decode(1,1,'One',2,'two') result from dual;
+
+
+
+// GROUP FUNCTIONS=MULTIPLE-ROW FUNCTIONS=AGGREGATE FUNCTIONS
+
+select group_function([DISTINCT | ALL] column_name), ...
+FROM table [WHERE condition];
+
+
+-->Group functions operate on multiple rows and return one result
+for each group.
+
+-->Group functions are usually used after the select keyword.
+
+-->Multiple group functions can be used in a single select statement.
+
+-->Group functions ignore the NULL values.But,you can use the NVL,
+NVL2,COALESCE,DECODE or CASE expressions to handle the NULL values.
+
+-->The DISTINCT and ALL keywords are used with the group functions to 
+consider duplicate values.
+
+-->CHAR,VARCHAR2,NUMBER or DATE data types can be used.
+
+
+1.)AVG :Returns the average value.
+2.)COUNT:Returns the no.of rows returned by a query.
+3.)MAX:Returns the maximum value of the expression or column.
+4.)MIN:Returns the minimum value of the expression or column.
+5.)SUM:Returns the sum of expression or column values.
+6.)LISTAGG: Transforms and orders data from multiple rows into a 
+single list of values separated by specified delimiter.
+
+
+AVG([DISTINCT|ALL] expression)
+
+
+select AVG(salary),AVG(ALL salary),AVG(DISTINCT salary)
+from employees where job_id='IT_PROG';
+
+select avg(commission_pct),avg(nvl(commission_pct,0)) from employees;
+
+
+
+COUNT([DISTINCT|ALL] expression)
+
+->"*" represents all rows including the NULL values.
+->If the column name is used with count function,this time
+NULL values are ignored.
+->we can use NVL,NVL2,NULLIF,COALESCE,CASE or DECODE functions to handle
+the NULL values.
+
+select count(*),count(manager_id),count(all manager_id),count(DISTINCT manager_id)
+from employees;
+
+select count(*),count(commission_pct),count(distinct commission_pct),
+count(nvl(commission_pct,0)) from employees;
+
+select count(*),count(commission_pct),count(distinct commission_pct),
+count(distinct nvl(commission_pct,0)) from employees;
+
+
+
+MAX(expression)
+
+->returns the maximum value of expression or column.
+->used with numeric,character or date.
+->using the DISTINCT or ALL keywords with MAX function is useless.
+->The null-related functions can be used with MAX function to handle the NULL values.
+
+MAX returns largest numeric value,latest date,alphabetically sorted last
+character data.
+
+select max(salary),max(hire_date),max(first_name) from employees;
+
+
+MIN(expression)
+
+->used for getting minimum value of expression or column.
+->used with numeric,character and date data type.
+->using the DISTINCT or ALL keywords with MIN function is useless.
+->The NVL,NVL2,COALESCE,CASE or DECODE functions can be used 
+to handle the NULL values.
+
+
+Select MIN(commission_pct),min(NVL(commission_pct,0)),
+min(hire_date),
+min(first_name) from employees;
+
+
+
+SUM Function:
+
+->used for getting the sum of colummn or expression you provide with.
+
+	SUM([ALL,DISTINCT] expression)
+->The ALL and DISTINCT keywords can be used to handle duplicate values.
+
+->exclusively used with numeric data.
+
+->The NVL,NVL2,COALESCE,CASE or DECODE funcs can be used to handle null values.
+
+
+select sum(salary),sum(distinct salary) from employees;
+
+
+
+LISTAGG Function:
+
+->The LISTAGG is used to aggregate strings from data in columns in database table.
+
+->Concatenates values from separate rows into single value.
+
+->Transforms data from multiple rows into a single list of values
+separated by specified delimiter.
+
+LISTAGG(column_name [,delimiter]) WITHIN GROUP (ORDER BY sort_expression)
+
+
+select listagg(first_name,',') within group (order by first_name) as employees
+from employees where job_id='ST_CLERK';
+
+
+select listagg(salary,'-') within group (order by salary desc) as employees
+from employees where job_id='ST_CLERK';
+
+select listagg(city,',') within group (order by city) as cities from locations
+where country_id='US';
+
+
+->Group functions are used to manipulate multiple rows and return one value.
+
+->The NULL values are ignored by default.
+
+->The DISTINCT operator can be used to eliminate duplicate rows to 
+work with the unique values.
+
+->Multiple group functions can be used in a single query.
+
+
+
+GROUP BY CLAUSE:
+
+-->creates groups of values using the group function.
+
+select expression1,expression2,...,expression_n,
+aggregate_function(aggregaate_expression)
+from table
+[where condition]
+group by expression1,expression2,...,expression_n
+[order by order_expression]
+
+-->we can use more than one expression -or column in a group by clause.
+
+-->The select clause cannot have any other individual column than what is used with the GROUP BY clause.
+
+-->we dont need to use all columns used with group by clause in select 
+statement.
+
+
+-->In the select statement, we can use the group functions with different 
+columns than the GROUP BY has.
+
+-->We can use as many group functions as we want.
+
+-->column aliases cannot be used with group by clause.
+
+-->The order by clause cannot have any other individual 
+columns than the group by clause has.
+
+-->We can use the where clause to restrict the resulting data.
+
+select job_id,avg(salary) from employees
+group by job_id
+order by avg(salary);
+
+select job_id,department_id,manager_id,avg(salary)
+from employees group by department_id,job_id,manager_id;
+
+select job_id,department_id,avg(salary),count(*)
+from employees
+group by job_id,department_id
+order by count(*) desc;
+
+
+
+-->The select clause cannot have any differentt columns than what
+is used in the group by clause.
+
+select job_id,department_id,avg(salary)
+from employees
+group by job_id
+order by avg(salary);
+
+will throw error.
+
+-->We dont need to use all the columns used with the group by clause
+in the select statement.
+
+	select avg(salary) from employees group by department_id;
+	select job_id,avg(salary) from employees group by job_id,department_id;
+
+-->We can use as many group functions as we want 
+select avg(salary),sum(salary),min(salary),max(salary),
+count(*) from employees
+group by department_id
+order by avg(salary);
+
+
+-->Column aliases cannot be used with the GROUP BY clause,
+but they can be used with the ORDER BY clause.
+
+
+select department_id as Departments,avg(salary)
+from employees
+group by Departments
+order by AVG(salary);
+
+- Will throw an error SQL-Command not properly ended.
+
+
+The SQL query executes in the flow below:
+
+1.)from-choose and join tables to get base data
+2.)where-Filters the base data
+3.)group by-Aggregates the base data (Column aliases cant be used)
+4.)having-Filters the aggregated data
+5.)select-Returns the final data (aliases are created at this step)
+6.)order by-Sorts the final data (Column aliases can be used)
+
+
+-->We can use the where clause to restrict the resulting data.
+
+select job_id,department_id,avg(salary) from employees
+where job_id in ('ST_MAN','SH_CLERK','ST_CLERK')
+group by job_id,department_id
+order by avg(salary);
+
+
+
+HAVING Clause:
+
+-->We cannot use group functions with where clause.
+
+-->We can use HAVING clause to filter data after it has grouped.
+
+-->The WHERE clause filters rows whereas the HAVING clause
+filters grouped data.
+
+select column_name,group_function
+from table
+[where condition]
+[GROUP BY group_by_expression]
+[Having group_condition]
+[ORDER BY column]
+
+-->Having clause placed before or after group by it will work.
+
+select job_id,AVG(salary) from employees
+group by job_id
+having avg(salary)>5000;
+
+select job_id,AVG(salary) from employees
+having avg(salary)>5000
+group by job_id;
+
+
+-->The WHERE clause and the HAVING clause can also be used 
+together in a query.
+
+
+select job_id,avg(salary) from employees
+where job_id='IT_PROG' 
+GROUP BY job_id
+having avg(salary)>5000;
+
+
+While using the having cluase it uses all the employees
+whereas while doesnt.
+
+--Where clause filters ROWS
+--Having clause filters GROUPS
+
+
+Nested Group Functions:
+
+-->Group functions can be nested.
+
+-->The output of inner function is the output of outer function.
+
+-->we have to use the group by clause when using nested
+group functions.
+
+-->Group functions can be nested to depth of two.
+
+	Groupfunction1(Groupfunction2())
+
+select department_id,max(avg(salary)) from employees
+group by department_id;
+
+will throw Error.
+
+
+select max(avg(salary)) from employees
+group by department_id;
+
+max(avg(salary))
+----------------
+19333.3333333333333
+
+
+--JOINS
+
+what is a JOIN?
+
+->A join is a concept that allows us to retrieve data from two or more tables in a single query.
+
+->In SQL,we often need to write queries to get data from two or more tables. Anything but the simplest of queries will usually need data from two or more tables,and to get data from multiple tables,
+we need to use the joins.
+
+
+ 
+Creating a JOIN:
+
+General Syntax:
+
+select columns from table1 JOIN_TYPE table2
+on table1.column_name=table2.column_name;
+
+
+NATURAL JOIN:
+
+select * from source_table NATURAL JOIN target_table;
+
+-->Implicitly joins two tables based on common columns that have the same name and same data type.
+
+-->The rows are matched with each other from two tables that have 
+equal values in the common columns.
+
+
+-->If the column names have same name in two tables,but diff datatypes,then will return error.
+
+-->The where clause can be used to restrict the data.
+
+select columns from table1 NATURAL JOIN table2;
+
+common columns + Employees table + Departments Table
+
+
+
+JOIN with the USING Clause:
+
+-->When joining two tables,if there are more than one common columns that have the same names,we can use the USING clause to specify which column needs to be selected as the join column in the join opeartion.
+
+-->Joining with the USING clause is considered as "Equijoin".
+
+select first_name,last_name,department_name,department_id
+from employees JOIN departments USING (department_id);
+
+
+
+Handling Ambiguous Column Names:
+
+
+ORA-00918 : column ambiguously defined.
+
+select first_name,last_name,department_name,manager_id
+from employees join departments
+using (department_id);
+
+will throw error because manager_id is in both tables,
+it doesnt understand which table manager_id to return.
+
+This situation is handled thru aliases.
+
+select first_name,last_name,department_name,d.manager_id
+from employees e  JOIN departments d  USING (department_id);
+
+->Table aliases increase code readability and query performance.
+
+->We cannot give aliases to columns that we use with the using clause or natural join.
+
+select l.city,d.department_name
+from locations l join departments d
+using (d.location_id)
+where location_id=1400;
+
+will throw error,ORA-01748-only simple column names allowed here.
+
+
+
+
+--INNER JOIN:
+-------------
+
+-->Returns all the rows from both the participating tables that 
+satisfy the join condition or the expression of the
+ON/USING clause.
+
+select columns from table1 [INNER] JOIN table2
+ON (join_condition) / USING(column_name);
+
+-->with the ON clause, we can write one or more join conditions even if they have different names.
+Only the rows that satisfy these join conditions are included in
+resultset.
+
+select e.first_name,e.last_name,d.manager_id,d.department_name
+from employees e JOIN departments d
+on (e.department_id=d.department_id and e.manager_id=d.manager_id);
+
+
+
+--Multiple Join Operations:
+
+-->We can join more than two tables.
+
+-->We can use the USING,ON clauses,or NATURAL JOIN while joining
+multiple tables.
+
+
+select * from employees e 
+JOIN departments d
+on (e.department_id=d.department_id)
+JOIN locations l
+on (l.location_id=d.location_id);
+
+
+--Restricting Joins:
+
+-->We can restricct joins using the WHERE clause or AND operator.
+
+select e.first_name,e.last_name,d.department_id,d.department_name,l.city
+from employees e JOIN departments d
+on (e.department_id=d.department_id)
+JOIN locations l
+on (l.location_id=d.location_id)
+where d.department_id=100;
+
+
+
+select e.first_name,e.last_name,d.department_id,d.department_name,l.city
+from employees e JOIN departments d
+on (e.department_id=d.department_id)
+JOIN locations l
+on (l.location_id=d.location_id)
+AND d.department_id=100;
+
+-->You cannot write the where clause more than once in a query.
+
+
+select e.first_name,e.last_name,e.job_id,d.department_id,d.department_name,l.city
+from employees e JOIN departments d
+on (e.department_id=d.department_id)
+JOIN locations l
+on (l.location_id=d.location_id)
+and e.job_id='IT_PROG'
+and e.first_name= 'David';
+
+
+--SELF JOIN
+
+-->Joining a table with itself is called "Self Join".
+
+-->A Self join is used for comparing rows in the same table or querying hierarchical data.
+
+
+select worker.first_name||' '||worker.last_name as workern,worker.employee_id,worker.manager_id,
+manager.employee_id,manager.first_name||' ' ||manager.last_name as managn
+from employees worker JOIN employees manager
+on (worker.manager_id=manager.employee_id);
+
+
+
+--NON-EQUI JOINS
+
+-->If two tables do not match with columns,we can join these tables using the BETWEEN operator or the comparison operator (<,>,<=,>=,<>)
+
+
+select worker.first_name||' '||worker.last_name as workern,worker.employee_id,worker.manager_id,
+manager.employee_id,manager.first_name||' ' ||manager.last_name as managn
+from employees worker JOIN employees manager
+on (worker.manager_id=manager.employee_id);
+
+
+select e.first_name,e.last_name,j.job_title,e.salary,
+j.min_salary,j.max_salary
+from employees e JOIN jobs j
+on e.salary between j.min_salary and j.max_salary;
+
+
+
+NON-Equijoins sample usages:
+
+->Checking for duplicates.
+->Matching against a range of values.
+->Computing running totals.
+
+
+
+--OUTER JOINS
+-------------
+select first_name,last_name,department_name
+from employees join departments
+using(department_id);
+
+
+-->The outer joins returns the matching rows from the joined tables,plus,unmatched rows from one or both tables.
+
+
+-->The LEFT OUTER JOIN returns all the matching rows of both tables and the unmatched rows of the left table.For the unwatched rows,
+the column values of the other table are shown as NULLS.
+
+
+select d.department_id,d.department_name,e.first_name,e.last_name
+from departments d left outer join employees e
+on (e.department_id=d.department_id);
+
+
+-->The Right OUTER JOIN returns all the matching rows of both tables and the unmatched rows of the right table.For the unmatched rows,
+the column values of the other table are shown as NULLS.
+
+
+select first_name,last_name,department_name
+from employees e right outer join departments d
+on (e.department_id=d.department_id);
+
+
+
+select first_name,last_name,department_name
+from departments d  left outer join employees e
+on (e.department_id=d.department_id);
+
+
+
+--FULL OUTER JOIN:
+
+-->Retrieves all of the rows from both tables.If a match is found,then,it displays the matching rows,if not,it displays NULL
+values.
+
+select first_name,last_name,department_name
+from employees e full outer join departments d
+on (e.department_id=d.department_id);
+
+
+--CROSS JOIN:
+
+-->Cross joins are used to return every combination of rows from two tables.
+
+-->Cross Join is also called as Cartesian Product or Cross Product.
+
+-->Cross Joins often happen if you dont specify a join b/w two tables,usually by accident.
+
+
+select e.first_name,e.last_name,e.department_id,d.department_id,
+d.department_name from employees e cross join departments d;
+
+
+
+
+--1.)INNER EQUIJOIN Examples
+
+select e.first_name,e.last_name,d.department_name
+from employees e JOIN departments d
+ON (e.department_id=d.department_id);
+
+select e.first_name,e.last_name,d.department_name
+from employees e JOIN departments d
+ON (e.department_id=d.department_id
+AND e.manager_id=d.manager_id);
+ 
+
+select e.first_name,e.last_name,d.department_name,city
+from employees e JOIN departments d
+on (e.department_id=d.department_id)
+JOIN locations l
+ON (d.location_id=l.location_id);
+
+
+select e.first_name,e.last_name,d.department_name
+from employees e,departments d
+where e.department_id=d.department_id;
+
+
+
+----2.)INNER NONEQUIJOIN Examples
+
+
+select e.first_name,e.last_name,j.job_title,e.salary,j.min_salary,j.max_salary
+from employees e JOIN jobs j
+ON (e.job_id=j.job_id AND e.salary>j.min_salary);
+ 
+
+select e.first_name,e.last_name,j.job_title,e.salary,j.min_salary,j.max_salary
+from employees e,jobs j
+where  e.job_id=j.job_id AND e.salary>j.min_salary;
+
+
+-----3.)OUTER EQUIJOIN Examples
+
+select first_name,last_name,department_name,e.department_id emp_dep,d.department_id dep_dep
+from employees e RIGHT OUTER JOIN departments d
+on (e.department_id=d.department_id);
+
+
+select first_name,last_name,department_name,e.department_id emp_dep,d.department_id dep_dep
+from employees e,departments d
+where e.department_id(+)=d.department_id;
+
+select e.first_name,e.last_name,d.department_name,city
+from employees e RIGHT OUTER JOIN departments d
+on (e.department_id=d.department_id)
+RIGHT OUTER JOIN locations l
+ON (d.location_id=l.location_id);
+
+
+----4.) OUTER NONEQUIJOIN Examples
+
+select e.first_name,e.last_name,j.job_title,e.salary,j.min_salary,j.max_salary
+from employees e LEFT OUTER JOIN jobs j
+ON e.job_id=j.job_id
+AND e.salary between j.min_salary+500 and j.max_salary;
+
+
+
+
+--Which JOIN TYPE to uSE????
+
+-->Dont use NOn-ansi syntax and dont use Natural joins
+-->Use table aliases
+
+-->Understand what you need to get?
+-->Determine if you need only the matched rows or not.
+-->If you need to get unmatched rows as well,you need to use the outer 
+joins.
+
+
+
+--USING SUBqueries
+------------------
+
+->A subquery is a SQL SELECT statement that is contained within another
+SELECT statement.
+
+Outer query=Main(Parent) Query
+
+Inner query=subquery
+
+-->A subquery is executed before the main query and the result of  the subquery is used by the main query.
+
+-->Subqeries are enclosed with Parentheses.
+
+-->Subqueries can be used with the SELECT,WHERE,HAVING and FROM clauses.
+
+select * from employees
+where salary>(select salary from employees where employee_id=145);
+ 
+
+SINGLE ROW SUBQUERIES:
+---------------------
+
+-->Single row subqueries return only one row from the inner query.
+
+-->Used with the single-row comparison operators(=,>,<,>=,<=,<>,!=)
+
+
+select first_name,last_name,department_id
+from employees 
+where department_id=(select department_id from
+                        employees where employee_id=145);
+ 
+
+-->We can use more than one subquery in one main query.
+
+select first_name,last_name,department_id,salary
+from employees 
+where department_id=(select department_id from
+                        employees where employee_id=145)
+AND salary<(select salary from employees where employee_id=145);
+
+
+
+
+-->Group functions can be used in a single row sub queries.
+
+select * from employees
+where hire_date=(select min(hire_date) from employees);
+
+
+-->If a single row sub query returns multiple-rows,it generates an error.
+
+-->If a sub query returns nothing or NULL value,the main query will
+return nothing.
+
+
+select * from employees
+where hire_date=
+(select min(hire_date) from employees
+group by department_id);
+
+
+select *
+from employees 
+where department_id=(select department_id from
+                        employees where employee_id=178)
+
+
+
+
+-->Multiple-ROW Subqueries:
+----------------------------
+
+->Returns more than one row from the inner queries.
+
+->Used with multiple row comparison operators.(IN,ANY,ALL)
+
+IN-checks whether a value matches any values in a sub query.
+
+ANY-checks whether a value matches at least one value in a subquery.
+
+ALL-checks whether a value matches all values in a subquery.
+
+->Can be used with the FROM,WHERE, or HAVING clauses.
+
+
+ select first_name,last_name,department_id,salary
+from employees
+where salary IN (select min(salary)
+                 from employees
+                 group by department_id);
+
+-->
+The ANY operator is used with the comparison operators(=,>,<,>=,<=,!=,<>)
+<ANY means less than the maximum
+=ANY means equal to one of the elements(same as IN)
+>ANY means more than the minimum
+
+
+select first_name,last_name,department_id,salary
+from employees
+where salary > ANY(select salary
+                 from employees
+                 where job_id='SA_MAN'); 
+
+-->The ALL operator in multiple-row subqueries is used to return values which provide the condition with all elements of the inner query.
+
+-->The ALL operator is used with the comparison opeartors(<,>,<=,>=,!=,=,<>)
+
+< ALL means less than minimum
+= ALL means nothing if there are more than one records
+> ALL means more than the maximum
+
+
+select first_name,last_name,department_id,salary
+from employees
+where salary < ALL( select salary
+                    from employees
+                    where job_id='SA_MAN');
+
+
+
+
+
+select first_name,last_name,department_id,salary
+from employees
+where department_id IN (select department_id
+                        from departments
+                        where location_id IN (select location_id
+                                              from locations
+                                              where country_id = (select country_id
+                                                                    from countries
+                                                                    where country_name='United Kingdom')));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MULTPLE COLUMN SubQueries:
+---------------------------
+
+
+-->Return more than one column to the outer query.
+
+-->Can be used with from,where,having clauses.
+
+-->Useful when writing more than one inner query in one outer query.
+
+-->Usually used with the IN or NOT IN operators.
+
+-->Two types of multiple-column subqueries:
+	1.)NON-pairwise comparison
+	2.)Pairwise Comparison
+-->Nonpairwise comparisons are like multiple row sub queries with the IN 
+operator,that we check multiple columns with separate sub queries.
+
+
+select employee_id,first_name,last_name,department_id,salary
+from employees
+where department_id IN  (select department_id from employees
+                        where employee_id IN (103,105,110))                       
+and salary in  (select  salary from employees
+                where  employee_id in (103,105,110) );
+
+
+Pairwise comparison subquery:
+----------------
+
+-->A subquery returning multiple columns is called "Pairwise comparison subquery"
+
+select first_name,last_name,department_id,salary
+from employees
+where (department_id,salary) IN
+                    (select department_id,salary from employees
+                    where employee_id IN (103,105,110));
+
+
+
+
+
+select first_name,last_name,department_id,salary
+from employees
+where (department_id,salary) IN
+                    (select department_id,max(salary) from employees
+                    group by department_id);
+
+
+
+-->We can write more than 2 columns and have a comparison of more than 2 
+columns at a time.
+
+
+
+
+--Using Subqueries as a Table:
+------------------------------
+
+--> we can use a sub query after the FROM clause like using a table.
+
+select * from (select state_province,city,department_id,department_name
+			from departments JOIN locations USING (location_id));
+
+
+-->This type of subqueries are also called INLINE VIEWS.
+-->The INLINE views are used as source for select query like a table.
+-->we can use more than one INLINE View in a SELECT statement.
+-->The inline views must be surrounded by parentheses.
+
+
+select * from 
+employees e JOIN (select state_province,city,department_id,department_name
+			from departments JOIN locations 
+            USING (location_id)
+            ORDER BY department_id) b
+USING(department_id);
+
+
+
+--SCALAR Subqueries:
+-------------------
+
+->If a subquery returns only one column for one row it is called 
+scalar subquery.
+
+->If a scalar subquery returns NULL or 0 rows, the main query
+will return nothing.
+
+->If a scalar subquery returns more than 1 row,the main query will
+return an error.
+
+->scalar subqueries can be used with:
+1.)select statements
+2.)DECODE functions & CASE expressions
+3.)WHERE clauses
+4.)SET clauses of UPDATE statements
+5.)VALUES clauses of INSERT statements
+6.)ORDER BY clauses.
+
+
+select employee_id,first_name,last_name from employees
+where department_id= (SELECT department_id from employees 
+                     where upper(first_name)='LUIS');
+                     
+ 
+select first_name,last_name,job_id
+from employees
+where salary > (select avg(salary) from employees);
+
+
+select employee_id,first_name,last_name,
+(CASE
+    when location_id=(select location_id from locations where postal_code='99236')
+    Then 'San Fransisco'
+    Else 'Other'
+    END) city
+from employees NATURAL JOIN departments;
+
+
+
+--CORRELATED SUBQUERIES:
+------------------------
+
+->When a subquery references to columns from the parent query,it is called 
+correlated subquery.
+
+->Correlated subqueries allow us to read every row in a table and compare values for each row against the related data.
+
+->In regular sub queries,they are executed first and the result of the subqueries are passed back to the parent query.
+
+->Fastness:
+	1.)Multiple-Column Subquery
+	2.)Join
+	3.)Correlated subquery
+
+select employee_id,first_name,last_name,department_id,salary
+from employees a
+where salary = (select max(salary) 
+                from employees b
+                where b.department_id=a.department_id);
+                
+      
+select employee_id,first_name,last_name,department_id,salary
+from employees a
+where (salary,department_id) IN (select max(salary),department_id 
+                                    from employees b
+                                group by department_id);   
+
+
+
+
+select employee_id,first_name,last_name,department_name,salary,
+(select avg(salary)
+from employees
+where department_id=d.department_id) "Dep's Avg Sal"
+from employees e JOIN departments d
+on e.department_id=d.department_id;
+
+
+
+
+--EXISTS Operator & Semijoins:
+------------------------------
+
+->we use the EXISTS operator to check the existence of rows in the subquery
+and match the records b/w the subquery and main query.
+
+->The exists operator is used with correlated subqueries generally.
+
+->The exists operator terminates the processing of subquery once the subquery returns first row.
+
+
+
+
+
+--SET OPERATORS:
+----------------
+
+-->There are 4 SET operators in oracle SQL
+
+1.)UNION - Returns all rows of both queries by eliminating duplicate rows.
+
+
+select * from books UNION select * from movies;
+
+
+2.)UNION ALL - Returns all rows of both queries including duplicates.
+
+ 
+select * from books UNION ALL  select * from movies;
+
+
+3.)INTERSECT - Returns the common rows of both queries.
+
+select * from books INTERSECT select * from movies;
+
+
+4.)MINUS - Returns unique rows of the first query.
+
+select * from books MINUS select * from movies;
+
+
+-->Queries using the SET operators are called Compound Queries.
+
+-->All SET operators have equal precedence.
+
+-->The SET operators are executed from top to bottom.
+
+-->Using the parentheses can change the execution order explicitly.
+
+-->The no.of columns or expressions in queries must match.
+
+-->Data types of each column in queries must match with corresponding column.
+
+-->
+	 num  char char
+select col1,col2,col3 from table1
+
+       num  char char
+select col1,col2,col3 from table2
+
+->The order by clause is used only once and at end of compound query.
+
+->The o/p is sorted in ascending order by default.
+
+->Column headings come from the first query.
+
+
+select * from retired_employees
+UNION
+select * from employees
+where job_id='IT_PROG';
+
+select first_name,last_name,email,hire_date,salary from retired_employees
+UNION ALL
+select first_name,last_name,email,hire_date,salary from employees;
+
+
+select first_name,last_name,email,hire_date,salary from retired_employees
+INTERSECT
+select first_name,last_name,email,hire_date,salary from employees; 
+
+
+select job_id from job_history
+INTERSECT
+select job_id from employees where department_id=80;
+
+
+select first_name,last_name,email,hire_date,salary,job_id from employees
+MINUS
+select first_name,last_name,email,hire_date,salary,job_id from  retired_employees; 
+
+
+
+Matching unmatched Queries:
+------------------------------
+
+-->The queries to be combined may not have the same no.of columns.
+
+-->NULL values can be used to match unmatched queries.
+
+
+ select job_id,department_id,first_name,last_name from employees
+ UNION ALL
+ select job_id,department_id,null,null from job_history;
+
+
+select job_id,null,first_name from employees where department_id=80
+UNION
+select job_id,department_id,null from job_history;
+
+
+
+
+ --using order by clause with SET Operaators.
+ --------------------------------------------
+
+-->The ORDER BY clause is used only once at the end of the compound query.
+
+-->It recognizes the columns and aliases that only exist in the first query.
+
+-->By default,the compound query is sorted in ascending order by the first 
+column of the first query.
+
+
+
+ select first_name,last_name,salary,department_id from employees
+ UNION
+ select first_name,last_name,salary,department_id from retired_employees
+ order by salary desc;
+ 
+ 
+ select first_name,last_name,salary s,department_id from employees
+ UNION
+ select first_name,last_name,salary,department_id from retired_employees
+ order by s desc;
+ 
+
+
+
+--Combining Multiple Queries Using SET Operators:
+-------------------------------------------------
+
+-->Multiple queries can be combined with the SET operators.
+
+-->SET operators can be different than each other.
+
+-->All SET Operators have equal precedence.
+
+-->Queries are evaluated from top to bottom(left to right).
+
+
+
+
+
+
+
+
+

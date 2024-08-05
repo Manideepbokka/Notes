@@ -1,0 +1,500 @@
+--open-source distributed event streaming platform.
+
+creating real-time stream
+processing real-time stream
+
+
+
+Paytm users ---> kafka server  --> Paytm server app
+
+suppose need to have validation 10 x transaction exceed then need to send notification to user.
+
+So need to check continuously for that. That's realtime streaming.
+
+we can have multiple kafka servers.
+
+
+
+why do we need kafka?
+
+App1  -- kafka -- App2
+
+redis or kafka or RabbitMQ 
+
+
+For suppose app1 needs to send some data to app2 and app2 is unavailable, 
+so that it will kept in kafka cluster. From there on it will read that.
+
+
+Frontend   Hadoop   DatabaseSlave  chatserver
+
+
+               kafka
+
+
+db server security systems RealTimeMonitoring others DataWarehouse
+
+
+How does it work
+
+pub/sub model
+
+              Message Broker
+(Message/Event)
+Producer                        consumer
+
+
+kafka components
+
+1. producer
+2. consumer
+3. Broker
+
+kafka server: just an intermediate entity that helps in message exchanges between a producer and a consumer.
+
+
+4. Cluster
+
+Multiple brokers will be in kafka cluster.
+
+5. Topic
+
+In paytm example, there can be multiple things like ticket booking, money transaction, Mobile recharge
+
+To categorize diff types of messages
+
+Payment Topic
+
+Booking Topic
+
+Insurance Topic
+
+Just consumer needs to subscribe to that topic which it wants.
+
+
+Its like database table.
+
+
+It specifies the category of the message or the classification of the message. Listeners can then just respond to the messages that belong to the topics they are listening on.
+
+6. Partitions:
+
+My producer sending billions of events into my topic so, my topic cannot candle those so we create partitions in the topic to handle them.
+
+works based on round robin principal.
+
+7. Offset:
+
+partition-0  msg1 msg2 msg3 msg4 
+              0    1    2    3
+partition-1  msg1 msg2 msg3 msg4 
+              0    1    2    3
+partition-2  msg1 msg2 msg3 msg4 
+              0    1    2    3
+
+The message number is called offset.
+
+sequence number is assigned to each message in each partition of kafka topic. This sequence number is called Offset.
+
+
+8. consumer-group
+   
+    c1 c2 c3 c4   consumer-rebalancing
+
+9. ZooKeeper: 
+
+used for coordination and to track the status of kafka cluster nodes. Also keeps track of kafka topics, partitions, offsets etc.
+
+
+start zookeeper
+
+start kafka server
+
+create a topic
+
+partition count, Replication Factor
+
+
+            Broker/Kafka Server
+		partition1+2+3
+
+producer                            consumer
+
+
+zookeeper: 2181
+
+kafka server/broker: 9092
+
+
+C:\kafka\bin\windows>zookeeper-server-start.bat ..\..\config\zookeeper.properties
+
+
+C:\kafka\bin\windows>kafka-server-start.bat ..\..\config\server.properties
+
+
+C:\kafka\bin\windows>kafka-topics.bat --bootstrap-server localhost:9092 --create --topic saimanideep --partitions 3 --re
+plication-factor 1
+Created topic saimanideep.
+
+C:\kafka\bin\windows>kafka-topics.bat --bootstrap-server localhost:9092 --create --topic chandravamsi --partitions 3 --r
+eplication-factor 1
+Created topic chandravamsi.
+
+
+C:\kafka\bin\windows>kafka-topics.bat --bootstrap-server localhost:9092 --list
+chandravamsi
+saimanideep
+
+C:\kafka\bin\windows>kafka-topics.bat --bootstrap-server localhost:9092 --describe --topic saimanideep
+[2024-07-30 16:15:23,734] WARN [AdminClient clientId=adminclient-1] The DescribeTopicPartitions API is not supported, using Metadata API to describe topics. (org.apache.kafka.clients.admin.KafkaAdminClient)
+Topic: saimanideep      TopicId: KpkCQ1BUQRi1Nxc1aXhtXA PartitionCount: 3       ReplicationFactor: 1    Configs:
+        Topic: saimanideep      Partition: 0    Leader: 0       Replicas: 0     Isr: 0  Elr: N/A        LastKnownElr: N/A
+        Topic: saimanideep      Partition: 1    Leader: 0       Replicas: 0     Isr: 0  Elr: N/A        LastKnownElr: N/A
+        Topic: saimanideep      Partition: 2    Leader: 0       Replicas: 0     Isr: 0  Elr: N/A        LastKnownElr: N/A
+
+
+
+producer commands:
+------------------
+kafka-console-producer.bat --broker-list localhost:9092 --topic saimanideep
+
+consumer commands:
+------------------
+kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic saimanideep --from-beginning
+
+
+
+value: string/Byte/Avro
+
+key: No Key/String/Byte Array/Avro
+
+
+
+
+
+
+Producer Code:
+---------------
+
+package org.example;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
+
+import java.util.concurrent.CompletableFuture;
+
+@Service
+public class ProducerService {
+
+    @Value("${kafka.topic.name: null}")
+    private String topicName;
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
+
+    public void publishMessageToTopic(String message){
+        ListenableFuture<SendResult<String, Object>> future= kafkaTemplate.send(topicName, message);
+
+        future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
+            @Override
+            public void onFailure(Throwable ex) {
+                System.out.println("Unable to send the message=["+message+"] to topic=["+topicName+"] with exception="+ex.getMessage());
+            }
+
+            @Override
+            public void onSuccess(SendResult<String, Object> result) {
+                System.out.println("Sent Message=[" + message + "] with offset=["+
+                        result.getRecordMetadata().offset()+"] and " +
+                        "partition=["+result.getRecordMetadata().partition()+"]");
+            }
+        });
+    }
+}
+
+
+
+consumer rebalancing:
+
+if we have 3 partitions in our topic, then if we have 3 consumers in consumer group it works, if we keep extra consumers in bench and replace the others its called consumer rebalancing.
+
+
+2024-07-31 17:04:03.476  INFO 12644 --- [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-my-consumer-group-1, groupId=my-consumer-group] Adding newly assigned partitions: saimanideep-2, saimanideep-0, saimanideep-1
+
+
+package org.example.service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Service;
+
+
+
+@Service
+public class ConsumerService {
+
+    private static final Logger logger= (Logger) LoggerFactory.getLogger(ConsumerService.class);
+
+    @KafkaListener(topics = "${kafka.topic.name}",groupId = "my-consumer-group")
+    public void listenAndProcessMessage(String message){
+        logger.info("Consumer recieved message=["+message+"]");
+    }
+}
+
+
+
+compile
+provided
+runtime
+test
+system
+import
+
+
+package org.example.configuration;
+
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.example.dao.Customer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class KafkaConfiguration {
+
+    @Bean
+    public NewTopic topicCreation(){
+        System.out.println("Creating new kafka topic");
+        return new NewTopic("BSMD",3,(short) 1);
+    }
+
+    @Bean(name="consumerFactory")
+    public ConsumerFactory<String, Object> consumerFactory(){
+        Map<String,Object> map=new HashMap<>();
+        map.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        map.put(ConsumerConfig.GROUP_ID_CONFIG, "my-consumer-group");
+        map.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        map.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        return new DefaultKafkaConsumerFactory<>(map);
+    }
+
+    @Bean
+    @DependsOn("consumerFactory")
+    public ConcurrentKafkaListenerContainerFactory<String, Object> concurrentKafkaListenerContainerFactory(){
+        ConcurrentKafkaListenerContainerFactory<String,Object> factory=new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.setConcurrency(5);
+        return factory;
+    }
+
+    @Bean(name="customerProducer")
+    public ProducerFactory<String, Customer> producerFactory(){
+        Map<String, Object> props=new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new  DefaultKafkaProducerFactory(props);
+    }
+
+    @Bean(name="customerTemplate")
+    @DependsOn("customerProducer")
+    public KafkaTemplate<String, Customer> customerKafkaTemplate(){
+        System.out.println("Customer Kafka Template Created");
+        return new KafkaTemplate<String,Customer>(producerFactory());
+    }
+
+    @Bean(name="stringProducer")
+    public ProducerFactory<String, Object> producerFactory1(){
+        Map<String, Object> props=new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        return new  DefaultKafkaProducerFactory(props);
+    }
+
+    @Bean(name="kafkaTemplate")
+    @DependsOn("stringProducer")
+    public KafkaTemplate<String, Object> KafkaTemplate(){
+
+        return new KafkaTemplate<String, Object>(producerFactory1());
+    }
+
+}
+
+
+
+TO send message to a particular partition in topic:
+
+kafkaTemplate.send(topic, partition, key, message);
+
+consumer :
+
+@KafkaListener(topics="some-topic", groupId="gp-id",
+topicPartitions={@TopicPartition(topic="some-topic",
+partitions={"2"})})
+
+
+Producer --> Topic --> consumer                   DLT-TOPIC
+                           |                         |
+			Failure Read                 |
+			   |                         |
+			Kafka Retry---Retry Exceeded-|	
+
+
+@RetryableTopic(attempts=n)
+
+but it attempts for n-1 times
+
+
+@DltHandler
+public void listenDlt()
+
+
+If u want delay n processing retry message then
+
+@RetryableTopic(attempts="4", 
+backoff=@Backoff(delay=3000,multiplier=1.5,
+maxDelay=15000))
+
+
+SB Avro schema and schema registry:
+-----------------------------------
+
+employee.avsc
+    |                       -------------------kafka-------------
+    |                       |                                   |
+  Avro Tool                 |                                   |
+  plugin                  Avro Serializer    Schema           Avro
+    |                       |                Registry        Deserializer
+    |                       |                                    |
+  Employee.java --------> producer                            Consumer
+
+
+
+Avro: contract b/w producer and consumer
+
+
+    <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <version>7.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client</artifactId>
+            <version>7.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.11.0</version>
+        </dependency>
+
+        <!-- Other dependencies -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>1.8.2</version>
+                <executions>
+                    <execution>
+                        <id>schemas</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/resources/</sourceDirectory>
+                            <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+
+Employee.avsc
+{
+  "namespace": "com.example.dao",
+  "type": "record",
+  "name": "Employee",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "firstName",
+      "type": "string"
+    },
+    {
+      "name": "middleName",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "lastName",
+      "type": "string"
+    },
+    {
+      "name": "emailId",
+      "type": "string",
+      "default": ""
+    }
+  ]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                         
+
+
+
+
+
+
+
+
+
+
+
+
+
+

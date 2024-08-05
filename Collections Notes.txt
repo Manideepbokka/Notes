@@ -1,0 +1,312 @@
+Set:
+
+8,2,"hello",true,34
+
+Duplicates are not allowed
+Insertion order is not preserved
+Accepts heterogenous objects
+
+Hashset:
+
+underlying ds: Hashtable
+
+Doesn't allow dups
+Insertion order is not preserved
+can add heterogenous elements
+can add null value
+Implements Serializable and Cloneable Interfaces
+
+
+
+LinkedHashSet:
+
+underlying ds: combination of linkedlist and hashTable
+
+Maintains insertion order
+
+SortedSet:
+
+Maintains values in sorted order
+
+
+NavigableSet:
+
+SubInterface of SortedSet
+
+contains methods related to Navigation functionality
+
+Both SortedSet and NavigableSet hav same implementation class as TreeSet
+
+
+TreeSet:
+
+Any object that we are storing in TreeSet must implement Comparable interface
+
+TreeSet<Employee> ts=new TreeSet<Employee>();
+
+
+Comparable Interface:
+---------------------
+
+present in java.lang package
+
+contains only one method
+public int compareTo(Object obj)
+
+Meant for Default Natural Sorting order
+
+
+TreeSet data=new TreeSet();
+
+data.add("M");
+data.add("R");
+data.add("K");
+
+
+K --- M --- R
+
+
+public int compareTo(Object obj)
+
+Object to be inserted --> obj1
+
+object already inserted --> obj2
+
+
+obj1.compareTo(obj2)
+
+
+obj1<obj2   obj1==obj2   obj1>obj2
+-1           0            +1 
+
+
+Comparator Interface:
+---------------------
+
+
+present in java.lang package
+
+contains two methods
+
+1.)public int compare(Object obj1,
+Object obj2)
+2.)public Boolean equals(Object obj)
+
+Meant for customized sorting
+
+
+
+Using Comparable Interface:
+
+152,185,254,10,132,154,10
+
+
+             152
+         10       185
+           132  154   254
+
+By default JVM will use compareTo method for default natural sorting order.
+
+
+TreeSet d=new TreeSet(new MySorting());
+
+when we provide object of comparator with TreeSet constructor, then JVM will go for compare method
+
+          152
+    185         10
+ 254  154     132
+
+
+Queue: (Java 1.5)
+-------
+
+FIFO
+
+Boolean add(E e) -- add at Tail of Queue
+Boolean offer(E e)
+E remove() -- removes and returns head of the queue. NoSuchElementException
+E poll() -- removes and return head of queue, if queue is empty returns null.
+E element() -- returns head of the queue. If queue is empty NoSuchElementException
+E peek() -- returns head of the queue. If queue is empty return null
+
+
+Priority Queue:
+--------------
+
+Insertion order is not preserved
+
+Duplicates are not allowed
+
+Depends on sorting order to include Hetero or homogenous objects
+
+
+PriorityQueue pq=new PriorityQueue();
+
+Map Interface:
+--------------
+
+An interface which represents mapping b/w a key and a value.
+
+
+Keys and values are objects,can be of any data type
+
+Duplicate Keys are not allowed, Values can be duplicated.
+
+Collection of entry objects
+
+int size()
+Boolean isEmpty()
+Boolean containsKey(Object key)
+V get(Object key)
+V put(K key, V value)
+void putAll(Map<? extends K,? extends V> m)
+Set<K> keyset()
+void clear()
+Collection<V> values()
+Set<Map.Entry<K,V>> entrySet()
+Boolean equals(Object o)
+int hashCode() 
+--sum of the hash Codes of each entry in the maps entryset view
+default V getOrDefault(Object key, V defaultValue)
+default void forEach(BiConsumer<? super K, ? super V> action)
+default void replaceAll(BiFunction<? super K, ? super V,? extends V> function)
+
+default V putIfAbsent(K key, V value)
+default Boolean remove(Object key, Object value)
+default Boolean replace(K key, V oldValue, V newValue)
+default V replace(K key, V value)
+
+default V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction)
+
+
+:: operator:
+---------------
+
+Method reference
+
+if its static metghod
+
+Interface i=ClassName::staticMethod;
+
+if its instance method
+
+Class obj=new Class();
+Interface i1=obj::instanceMethod
+
+:: - constructor Reference:
+---------------------------
+Arguments must match
+
+public class ConstructorReferenceDemo {
+    public static void main(String[] args) {
+        //Details d=Student::new;
+        Details d=(name)-> new Student(name);
+        Student s=d.getStudent("Manideep");
+    }
+}
+
+class Student{
+    Student(String name){
+        System.out.println(name +" is successfully enrolled");
+    }
+}
+
+interface Details{
+    Student getStudent(String name);
+}
+
+
+Details d=Student::new;
+//Equivalents
+Details d=(name)-> new Student(name);
+
+
+Streams:
+---------
+
+process data fast using multicore processors
+
+From Collection(I) we got stream() 
+
+   data processing with streams
+        |
+  configuration         processing
+   |      |
+Filter   map
+        
+
+public Stream filter(Predicate<T> t)
+
+public Steam map(Function<T,R> f)
+
+
+ParallelStreams Code:
+---------------------
+
+parallelStream() method on collection
+parallel() method on stream
+
+stateless: state of one element doesn't effect another element
+
+non-interfering: data source is not affected while operation
+
+associative: one operation result is not affected by the order of data under processing
+
+
+
+
+TreeMap implements AbstractMap
+
+underlying DS: Red Black Tree
+
+self-balancing binary Tree
+
+used for frequent insertion and deletion
+
+Duplicate Keys are not allowed(Values can be duplicated)
+
+Default sorting order: keys of the TreeMap should be homogenous and comparable
+
+Customized Order: keys need not be homogenous and comparable
+
+Null Key is not allowed, null values are allowed
+
+
+
+Need of concurrent collections:
+------------------------------
+
+When multiple threads access a shared data source,
+if they try to change them ten we get concurrentModificationException
+
+Vector, Stack, HashTable are synchronized
+
+Collections.synchronizedList(list)
+
+Collections.synchronizedMap(map)
+
+Collections.synchronizedSet(set)
+
+concurrent collections use segment locking mechanism
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

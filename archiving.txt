@@ -1,0 +1,96 @@
+To keep data that is 7 years old in your table, read it using a JPA (Java Persistence API) call, convert it to CSV format, and then store it in an Amazon S3 bucket while adding tags, you can follow these steps:
+
+1. **Database Query Using JPA**:
+   Use JPA to query your database for records that are 7 years old from today. Make sure your JPA entity maps to the table containing this data.
+
+2. **Convert Data to CSV**:
+   Once you retrieve the data from the database, you need to convert it into a CSV format. You can use a CSV library such as OpenCSV to accomplish this.
+
+   Here's an example of how to convert a list of Java objects to CSV:
+
+   ```java
+   List<MyEntity> data = // Fetched data from the database using JPA
+   String csvData = data.stream()
+       .map(entity -> String.join(",", entity.getField1(), entity.getField2(), ...))
+       .collect(Collectors.joining("\n"));
+   ```
+
+3. **AWS SDK for Java**:
+   You'll need to use the AWS SDK for Java to work with Amazon S3. Make sure you've set up your AWS credentials and have the necessary permissions to interact with S3.
+
+4. **Upload to Amazon S3**:
+   You can upload the CSV data to Amazon S3 using the AWS SDK. Here's an example:
+
+   ```java
+   AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+   String bucketName = "your-s3-bucket";
+   String key = "path/to/your/csv/file.csv";
+   InputStream inputStream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+   ObjectMetadata metadata = new ObjectMetadata();
+   metadata.addUserMetadata("tag1", "value1");
+   metadata.addUserMetadata("tag2", "value2");
+   
+   s3Client.putObject(bucketName, key, inputStream, metadata);
+   ```
+
+   In this example, we are uploading the CSV data as an object to your S3 bucket while adding custom metadata tags. You can adjust the tags and file path as needed.
+
+5. **Scheduled Task**:
+   To automate this process and ensure that it runs periodically, you can create a scheduled task or job using a tool like Quartz Scheduler or Spring Scheduler. This way, the process will run automatically to archive data older than 7 years on a regular basis.
+
+6. **Error Handling and Logging**:
+   Make sure to handle exceptions and add appropriate logging to track the success and failure of this process. You should also consider archiving the processed data in your database or elsewhere for future reference.
+
+Keep in mind that you may need to adapt these steps based on your specific database and S3 configuration. Additionally, ensure that you comply with any data retention policies and regulations that apply to your data.
+
+
+
+
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MyScheduledTask {
+    @Scheduled(cron = "0 0 0 * * ?") // This cron expression triggers the task every day at midnight
+    public void myScheduledMethod() {
+        // Your task logic here
+    }
+}
+
+
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication
+@EnableScheduling
+public class MyApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+}
+
+
+
+Cron Expression Format:
+The cron expression used in the @Scheduled annotation follows the standard cron format, which consists of six fields: second minute hour day month day-of-week.
+
+second: 0-59
+minute: 0-59
+hour: 0-23
+day: 1-31
+month: 1-12 or JAN-DEC
+day-of-week: 0-7 or SUN-SAT (both 0 and 7 represent Sunday)
+You can customize the cron expression to suit your scheduling needs.
+
+
+<dependency>
+    <groupId>com.amazonaws</groupId>
+    <artifactId>aws-java-sdk-s3</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.opencsv</groupId>
+    <artifactId>opencsv</artifactId>
+</dependency>
